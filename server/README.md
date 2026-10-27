@@ -21,7 +21,7 @@ pnpm inspect
 
 - `pnpm dev` — run the TypeScript server directly during development
 - `pnpm typecheck` — type-check without emitting files
-- `pnpm build` — compile to `dist/`
+- `pnpm build` — bundle the server to `dist/`
 - `pnpm start` — run the compiled server
 
 When connecting an MCP client over stdio, configure it to launch `node` with the absolute path to `server/dist/index.js` after building. Keep standard output reserved for MCP messages; write logs to standard error.

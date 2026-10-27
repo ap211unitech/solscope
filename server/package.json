@@ -6,14 +6,14 @@
   "type": "module",
   "private": true,
   "engines": {
-    "node": ">=20"
+    "node": ">=20.18"
   },
   "scripts": {
     "dev": "tsx src/index.ts",
     "typecheck": "tsc --noEmit",
     "build": "tsc && tsc-alias --resolve-full-paths",
     "start": "node dist/index.js",
-    "inspect": "pnpm build && pnpx -y @modelcontextprotocol/inspector node dist/index.js"
+    "server:inspect": "pnpm build && pnpx -y @modelcontextprotocol/inspector node dist/index.js"
   },
   "keywords": [],
   "author": "",
@@ -21,6 +21,9 @@
   "packageManager": "pnpm@12.15.0",
   "dependencies": {
     "@modelcontextprotocol/server": "^2.4.0",
+    "@solana/kit": "^8.5.0",
+    "dotenv": "^18.0.9",
+    "node-cache": "^5.1.2",
     "zod": "^4.6.7"
   },
   "devDependencies": {

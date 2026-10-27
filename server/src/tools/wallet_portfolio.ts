@@ -1,9 +1,5 @@
 import type { ToolCallback } from "@modelcontextprotocol/server";
-import {
-  address,
-  getAddressEncoder,
-  getProgramDerivedAddress,
-} from "@solana/kit";
+import { address, getAddressEncoder, getProgramDerivedAddress } from "@solana/kit";
 import {
   createRpcCache,
   formatTokenAmount,
@@ -37,10 +33,7 @@ type AggregatedHolding = {
   decimals: number;
 };
 
-function readMetadataString(
-  data: Buffer,
-  offset: number,
-): [string, number] | null {
+function readMetadataString(data: Buffer, offset: number): [string, number] | null {
   if (offset + 4 > data.length) {
     return null;
   }
@@ -98,20 +91,10 @@ async function getMetadataAddresses(mints: string[]) {
 
 async function fetchMetadata(mints: string[]) {
   const metadataAddresses = await getMetadataAddresses(mints);
-  const metadataByMint = new Map<
-    string,
-    { name: string; symbol: string }
-  >();
+  const metadataByMint = new Map<string, { name: string; symbol: string }>();
 
-  for (
-    let start = 0;
-    start < metadataAddresses.length;
-    start += METADATA_BATCH_SIZE
-  ) {
-    const addressBatch = metadataAddresses.slice(
-      start,
-      start + METADATA_BATCH_SIZE,
-    );
+  for (let start = 0; start < metadataAddresses.length; start += METADATA_BATCH_SIZE) {
+    const addressBatch = metadataAddresses.slice(start, start + METADATA_BATCH_SIZE);
     const response = await rpc
       .getMultipleAccounts(addressBatch, {
         commitment: "confirmed",
@@ -136,9 +119,7 @@ async function fetchMetadata(mints: string[]) {
   return metadataByMint;
 }
 
-async function fetchWalletPortfolio(
-  walletAddress: string,
-): Promise<WalletPortfolio> {
+async function fetchWalletPortfolio(walletAddress: string): Promise<WalletPortfolio> {
   const owner = address(walletAddress);
   const accountResponses = await Promise.all(
     TOKEN_PROGRAM_ADDRESSES.map((programId) =>
@@ -194,13 +175,11 @@ async function fetchWalletPortfolio(
   };
 }
 
-export const getWalletPortfolio: ToolCallback<
-  typeof walletPortfolioSchema
-> = async ({ walletAddress }) => {
-  const portfolio = await getCachedValue(
-    portfolioCache,
-    walletAddress,
-    () => fetchWalletPortfolio(walletAddress),
+export const getWalletPortfolio: ToolCallback<typeof walletPortfolioSchema> = async ({
+  walletAddress,
+}) => {
+  const portfolio = await getCachedValue(portfolioCache, walletAddress, () =>
+    fetchWalletPortfolio(walletAddress),
   );
 
   return {

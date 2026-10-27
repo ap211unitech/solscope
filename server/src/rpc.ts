@@ -11,10 +11,7 @@ export function formatTokenAmount(amount: bigint, decimals: number): string {
 
   const divisor = 10n ** BigInt(decimals);
   const whole = amount / divisor;
-  const fractional = (amount % divisor)
-    .toString()
-    .padStart(decimals, "0")
-    .replace(/0+$/, "");
+  const fractional = (amount % divisor).toString().padStart(decimals, "0").replace(/0+$/, "");
 
   return fractional ? `${whole}.${fractional}` : whole.toString();
 }
@@ -24,9 +21,7 @@ export const TOKEN_PROGRAM_ADDRESSES = [
   address("TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"),
 ];
 
-export const METADATA_PROGRAM_ADDRESS = address(
-  "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s",
-);
+export const METADATA_PROGRAM_ADDRESS = address("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s");
 
 const CACHE_OPTIONS = {
   stdTTL: 15,

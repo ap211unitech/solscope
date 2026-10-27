@@ -26,5 +26,9 @@ pnpm inspect
 - `pnpm typecheck` — type-check without emitting files
 - `pnpm build` — compile the server to `dist/`
 - `pnpm start` — run the compiled server
+- `pnpm lint` — lint all TypeScript files in the repository
+- `pnpm lint:fix` — automatically fix lint issues where possible
+- `pnpm format` — format supported source, config, and documentation files across the repository
+- `pnpm format:check` — check formatting across the repository without changing files
 
 When connecting an MCP client over stdio, configure it to launch `node` with the absolute path to `server/dist/index.js` after building. Keep standard output reserved for MCP messages; write logs to standard error.

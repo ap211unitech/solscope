@@ -1,0 +1,5 @@
+.git
+.env
+server/node_modules
+server/dist
+server/pnpm-lock.yaml

@@ -17,9 +17,7 @@ type WalletSnapshot = {
   tokenAccountCount: number;
 };
 
-async function fetchWalletSnapshot(
-  walletAddress: string,
-): Promise<WalletSnapshot> {
+async function fetchWalletSnapshot(walletAddress: string): Promise<WalletSnapshot> {
   const owner = address(walletAddress);
   const [balance, ...tokenAccountResponses] = await Promise.all([
     rpc.getBalance(owner, { commitment: "confirmed" }).send(),
@@ -48,18 +46,12 @@ async function fetchWalletSnapshot(
   };
 }
 
-async function getCachedWalletSnapshot(
-  walletAddress: string,
-): Promise<WalletSnapshot> {
-  return getCachedValue(snapshotCache, walletAddress, () =>
+export const getWalletSnapshot: ToolCallback<typeof walletSnapshotSchema> = async ({
+  walletAddress,
+}) => {
+  const snapshot = await getCachedValue(snapshotCache, walletAddress, () =>
     fetchWalletSnapshot(walletAddress),
   );
-}
-
-export const getWalletSnapshot: ToolCallback<
-  typeof walletSnapshotSchema
-> = async ({ walletAddress }) => {
-  const snapshot = await getCachedWalletSnapshot(walletAddress);
 
   return {
     content: [{ type: "text", text: JSON.stringify(snapshot, null, 2) }],

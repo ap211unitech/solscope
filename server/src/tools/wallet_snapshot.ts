@@ -1,19 +1,15 @@
 import type { ToolCallback } from "@modelcontextprotocol/server";
-import { address, createSolanaRpc } from "@solana/kit";
-import { APP_CONFIG } from "@solscope/config";
+import { address } from "@solana/kit";
+import {
+  createRpcCache,
+  formatTokenAmount,
+  getCachedValue,
+  rpc,
+  TOKEN_PROGRAM_ADDRESSES,
+} from "@solscope/rpc";
 import { walletSnapshotSchema } from "@solscope/schemas";
-import NodeCache from "node-cache";
 
-const rpc = createSolanaRpc(APP_CONFIG.solana.rpcUrl);
-const tokenProgramAddresses = [
-  address("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"),
-  address("TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"),
-];
-const LAMPORTS_PER_SOL = 1_000_000_000n;
-const snapshotCache = new NodeCache({
-  stdTTL: 15,
-  checkperiod: 30,
-});
+const snapshotCache = createRpcCache();
 
 type WalletSnapshot = {
   address: string;
@@ -21,25 +17,13 @@ type WalletSnapshot = {
   tokenAccountCount: number;
 };
 
-function formatSolBalance(lamports: bigint): string {
-  const wholeSol = lamports / LAMPORTS_PER_SOL;
-  const fractionalLamports = (lamports % LAMPORTS_PER_SOL)
-    .toString()
-    .padStart(9, "0")
-    .replace(/0+$/, "");
-
-  return fractionalLamports
-    ? `${wholeSol}.${fractionalLamports}`
-    : `${wholeSol}`;
-}
-
 async function fetchWalletSnapshot(
   walletAddress: string,
 ): Promise<WalletSnapshot> {
   const owner = address(walletAddress);
   const [balance, ...tokenAccountResponses] = await Promise.all([
     rpc.getBalance(owner, { commitment: "confirmed" }).send(),
-    ...tokenProgramAddresses.map((programId) =>
+    ...TOKEN_PROGRAM_ADDRESSES.map((programId) =>
       rpc
         .getTokenAccountsByOwner(
           owner,
@@ -56,7 +40,7 @@ async function fetchWalletSnapshot(
 
   return {
     address: walletAddress,
-    solBalance: formatSolBalance(balance.value),
+    solBalance: formatTokenAmount(balance.value, 9),
     tokenAccountCount: tokenAccountResponses.reduce(
       (count, response) => count + response.value.length,
       0,
@@ -67,16 +51,9 @@ async function fetchWalletSnapshot(
 async function getCachedWalletSnapshot(
   walletAddress: string,
 ): Promise<WalletSnapshot> {
-  const cachedSnapshot = snapshotCache.get<WalletSnapshot>(walletAddress);
-
-  if (cachedSnapshot) {
-    return cachedSnapshot;
-  }
-
-  const snapshot = await fetchWalletSnapshot(walletAddress);
-  snapshotCache.set(walletAddress, snapshot);
-
-  return snapshot;
+  return getCachedValue(snapshotCache, walletAddress, () =>
+    fetchWalletSnapshot(walletAddress),
+  );
 }
 
 export const getWalletSnapshot: ToolCallback<

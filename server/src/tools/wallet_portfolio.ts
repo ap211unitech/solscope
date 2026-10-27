@@ -1,27 +1,21 @@
 import type { ToolCallback } from "@modelcontextprotocol/server";
 import {
   address,
-  createSolanaRpc,
   getAddressEncoder,
   getProgramDerivedAddress,
 } from "@solana/kit";
-import { APP_CONFIG } from "@solscope/config";
+import {
+  createRpcCache,
+  formatTokenAmount,
+  getCachedValue,
+  METADATA_PROGRAM_ADDRESS,
+  rpc,
+  TOKEN_PROGRAM_ADDRESSES,
+} from "@solscope/rpc";
 import { walletPortfolioSchema } from "@solscope/schemas";
-import NodeCache from "node-cache";
 
-const rpc = createSolanaRpc(APP_CONFIG.solana.rpcUrl);
-const tokenProgramAddresses = [
-  address("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"),
-  address("TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"),
-];
-const metadataProgramAddress = address(
-  "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s",
-);
 const METADATA_BATCH_SIZE = 100;
-const portfolioCache = new NodeCache({
-  stdTTL: 15,
-  checkperiod: 30,
-});
+const portfolioCache = createRpcCache();
 const addressEncoder = getAddressEncoder();
 
 type TokenHolding = {
@@ -91,10 +85,10 @@ async function getMetadataAddresses(mints: string[]) {
   return Promise.all(
     mints.map((mint) =>
       getProgramDerivedAddress({
-        programAddress: metadataProgramAddress,
+        programAddress: METADATA_PROGRAM_ADDRESS,
         seeds: [
           metadataSeeds,
-          addressEncoder.encode(metadataProgramAddress),
+          addressEncoder.encode(METADATA_PROGRAM_ADDRESS),
           addressEncoder.encode(address(mint)),
         ],
       }).then(([metadataAddress]) => metadataAddress),
@@ -128,7 +122,7 @@ async function fetchMetadata(mints: string[]) {
     addressBatch.forEach((metadataAddress, index) => {
       const account = response.value[index];
 
-      if (!account || account.owner !== metadataProgramAddress) {
+      if (!account || account.owner !== METADATA_PROGRAM_ADDRESS) {
         return;
       }
 
@@ -147,7 +141,7 @@ async function fetchWalletPortfolio(
 ): Promise<WalletPortfolio> {
   const owner = address(walletAddress);
   const accountResponses = await Promise.all(
-    tokenProgramAddresses.map((programId) =>
+    TOKEN_PROGRAM_ADDRESSES.map((programId) =>
       rpc
         .getTokenAccountsByOwner(
           owner,
@@ -200,37 +194,14 @@ async function fetchWalletPortfolio(
   };
 }
 
-function formatTokenAmount(amount: bigint, decimals: number): string {
-  if (decimals === 0) {
-    return amount.toString();
-  }
-
-  const divisor = 10n ** BigInt(decimals);
-  const whole = amount / divisor;
-  const fractional = (amount % divisor)
-    .toString()
-    .padStart(decimals, "0")
-    .replace(/0+$/, "");
-
-  return fractional ? `${whole}.${fractional}` : whole.toString();
-}
-
 export const getWalletPortfolio: ToolCallback<
   typeof walletPortfolioSchema
 > = async ({ walletAddress }) => {
-  const cachedPortfolio =
-    portfolioCache.get<WalletPortfolio>(walletAddress);
-
-  if (cachedPortfolio) {
-    return {
-      content: [
-        { type: "text", text: JSON.stringify(cachedPortfolio, null, 2) },
-      ],
-    };
-  }
-
-  const portfolio = await fetchWalletPortfolio(walletAddress);
-  portfolioCache.set(walletAddress, portfolio);
+  const portfolio = await getCachedValue(
+    portfolioCache,
+    walletAddress,
+    () => fetchWalletPortfolio(walletAddress),
+  );
 
   return {
     content: [{ type: "text", text: JSON.stringify(portfolio, null, 2) }],

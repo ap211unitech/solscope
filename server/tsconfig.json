@@ -8,6 +8,7 @@
     "types": ["node"],
     "paths": {
       "@solscope/config": ["./src/config.ts"],
+      "@solscope/rpc": ["./src/rpc.ts"],
       "@solscope/schemas": ["./src/schemas.ts"],
       "@solscope/tools": ["./src/tools/index.ts"]
     },

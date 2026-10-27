@@ -1,7 +1,11 @@
 import { McpServer } from "@modelcontextprotocol/server";
 import { serveStdio } from "@modelcontextprotocol/server/stdio";
-import { walletPortfolioSchema, walletSnapshotSchema } from "@solscope/schemas";
-import { getWalletPortfolio, getWalletSnapshot } from "@solscope/tools";
+import {
+  explainTransactionSchema,
+  walletPortfolioSchema,
+  walletSnapshotSchema,
+} from "@solscope/schemas";
+import { explainTransaction, getWalletPortfolio, getWalletSnapshot } from "@solscope/tools";
 
 function createServer(): McpServer {
   const server = new McpServer({
@@ -27,6 +31,16 @@ function createServer(): McpServer {
       inputSchema: walletPortfolioSchema,
     },
     getWalletPortfolio,
+  );
+
+  server.registerTool(
+    "explain_transaction",
+    {
+      description:
+        "Explain a Solana transaction in plain English: success/failure, fee, who signed, programs involved, SOL and token balance changes, and a heuristic category (swap, transfer, staking, or other).",
+      inputSchema: explainTransactionSchema,
+    },
+    explainTransaction,
   );
 
   return server;

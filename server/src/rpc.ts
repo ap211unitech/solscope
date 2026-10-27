@@ -5,15 +5,21 @@ import NodeCache from "node-cache";
 export const rpc = createSolanaRpc(APP_CONFIG.solana.rpcUrl);
 
 export function formatTokenAmount(amount: bigint, decimals: number): string {
+  const sign = amount < 0n ? "-" : "";
+  const absoluteAmount = amount < 0n ? -amount : amount;
+
   if (decimals === 0) {
-    return amount.toString();
+    return `${sign}${absoluteAmount}`;
   }
 
   const divisor = 10n ** BigInt(decimals);
-  const whole = amount / divisor;
-  const fractional = (amount % divisor).toString().padStart(decimals, "0").replace(/0+$/, "");
+  const whole = absoluteAmount / divisor;
+  const fractional = (absoluteAmount % divisor)
+    .toString()
+    .padStart(decimals, "0")
+    .replace(/0+$/, "");
 
-  return fractional ? `${whole}.${fractional}` : whole.toString();
+  return fractional ? `${sign}${whole}.${fractional}` : `${sign}${whole}`;
 }
 
 export const TOKEN_PROGRAM_ADDRESSES = [

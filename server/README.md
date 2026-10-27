@@ -12,7 +12,7 @@ pnpm dev
 
 Set `SOLANA_RPC_URL` in the project root `.env` file to a Solana HTTP(S) RPC endpoint. The example uses Solana mainnet-beta's public RPC URL; a provider endpoint can be used instead.
 
-The server exposes `greet` and `get_wallet_snapshot` tools. The wallet snapshot validates the supplied Solana address and returns its SOL balance and combined SPL Token/Token-2022 account count. Results are cached in memory for 15 seconds.
+The server exposes `get_wallet_snapshot` and `get_wallet_portfolio` read-only tools. The wallet snapshot validates the supplied Solana address and returns its SOL balance and combined SPL Token/Token-2022 account count. The portfolio aggregates non-zero token holdings by mint and returns their amounts and on-chain Metaplex names/symbols when available, falling back to the mint address when metadata is missing. Both results are cached in memory for 15 seconds. Paid access and x402 are not implemented.
 
 To build the server and launch it in the MCP Inspector:
 

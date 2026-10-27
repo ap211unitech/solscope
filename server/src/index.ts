@@ -1,7 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/server";
 import { serveStdio } from "@modelcontextprotocol/server/stdio";
-import { walletSnapshotSchema } from "@solscope/schemas";
-import { getWalletSnapshot } from "@solscope/tools";
+import { walletPortfolioSchema, walletSnapshotSchema } from "@solscope/schemas";
+import { getWalletPortfolio, getWalletSnapshot } from "@solscope/tools";
 
 function createServer(): McpServer {
   const server = new McpServer({
@@ -17,6 +17,16 @@ function createServer(): McpServer {
       inputSchema: walletSnapshotSchema,
     },
     getWalletSnapshot,
+  );
+
+  server.registerTool(
+    "get_wallet_portfolio",
+    {
+      description:
+        "Return the wallet's non-zero SPL Token and Token-2022 holdings with token names, symbols, and amounts when on-chain metadata is available.",
+      inputSchema: walletPortfolioSchema,
+    },
+    getWalletPortfolio,
   );
 
   return server;

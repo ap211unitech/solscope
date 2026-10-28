@@ -2,10 +2,16 @@ import { McpServer } from "@modelcontextprotocol/server";
 import { serveStdio } from "@modelcontextprotocol/server/stdio";
 import {
   explainTransactionSchema,
+  tokenRiskCheckSchema,
   walletPortfolioSchema,
   walletSnapshotSchema,
 } from "@solscope/schemas";
-import { explainTransaction, getWalletPortfolio, getWalletSnapshot } from "@solscope/tools";
+import {
+  checkTokenRisk,
+  explainTransaction,
+  getWalletPortfolio,
+  getWalletSnapshot,
+} from "@solscope/tools";
 
 function createServer(): McpServer {
   const server = new McpServer({
@@ -41,6 +47,16 @@ function createServer(): McpServer {
       inputSchema: explainTransactionSchema,
     },
     explainTransaction,
+  );
+
+  server.registerTool(
+    "token_risk_check",
+    {
+      description:
+        "Return a heuristic token risk report with GoPlus holder rankings, security checks, metadata, markets, and liquidity-provider data, cross-checked against Solana RPC mint, supply, authorities, and Token-2022 extensions. Not investment advice.",
+      inputSchema: tokenRiskCheckSchema,
+    },
+    checkTokenRisk,
   );
 
   return server;

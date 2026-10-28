@@ -16,7 +16,14 @@ export const explainTransactionSchema = z.object({
     .trim()
     .refine(isSignature, "Transaction signature must be a valid Solana signature"),
 });
+export const tokenRiskCheckSchema = z.object({
+  mintAddress: z
+    .string("Token mint address is required")
+    .trim()
+    .refine(isAddress, "Token mint address must be a valid Solana address"),
+});
 
 export type WalletSnapshotInput = z.infer<typeof walletSnapshotSchema>;
 export type WalletPortfolioInput = z.infer<typeof walletPortfolioSchema>;
 export type ExplainTransactionInput = z.infer<typeof explainTransactionSchema>;
+export type TokenRiskCheckInput = z.infer<typeof tokenRiskCheckSchema>;

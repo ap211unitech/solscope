@@ -3,9 +3,12 @@ import { formatTokenAmount, rpc } from "@solscope/rpc";
 import type { AnalyzedTransaction, WalletActivityDigest } from "@solscope/types";
 import { analyzeTransaction, fetchParsedTransaction } from "./explain_transaction";
 
-const TRANSACTION_FETCH_BATCH_SIZE = 5;
+const TRANSACTION_FETCH_BATCH_SIZE = 2;
 const TOP_RESULT_COUNT = 5;
 const RECENT_TRANSACTION_COUNT = 10;
+const MAX_RATE_LIMIT_RETRIES = 4;
+const RATE_LIMIT_RETRY_BASE_MS = 500;
+const BETWEEN_BATCH_DELAY_MS = 250;
 
 const KNOWN_PROGRAMS: Record<string, string> = {
   "11111111111111111111111111111111": "System Program",
@@ -34,14 +37,83 @@ function topEntries<TKey extends string>(counts: Map<TKey, number>, count: numbe
     .slice(0, count);
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function isRateLimitError(error: unknown): boolean {
+  const pending = [error];
+  const visited = new Set<unknown>();
+  while (pending.length > 0) {
+    const current = pending.pop();
+    if (current === undefined || visited.has(current)) {
+      continue;
+    }
+    visited.add(current);
+
+    if (
+      current instanceof Error &&
+      /\b429\b|too many requests|rate.?limit/i.test(current.message)
+    ) {
+      return true;
+    }
+    if (!isRecord(current)) {
+      continue;
+    }
+
+    for (const key of ["message", "__serverMessage"]) {
+      if (
+        typeof current[key] === "string" &&
+        /\b429\b|too many requests|rate.?limit/i.test(current[key])
+      ) {
+        return true;
+      }
+    }
+    for (const key of ["cause", "context", "error"]) {
+      if (current[key] !== undefined) {
+        pending.push(current[key]);
+      }
+    }
+  }
+  return false;
+}
+
+async function retryOnRateLimit<T>(operation: () => Promise<T>, description: string): Promise<T> {
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      return await operation();
+    } catch (error) {
+      if (!isRateLimitError(error)) {
+        throw error;
+      }
+      if (attempt === MAX_RATE_LIMIT_RETRIES) {
+        throw new Error(
+          `Solana RPC rate-limited ${description} after ${MAX_RATE_LIMIT_RETRIES} retries.`,
+          { cause: error },
+        );
+      }
+      const delayMs = RATE_LIMIT_RETRY_BASE_MS * 2 ** attempt;
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+  }
+}
+
 async function fetchTransactions(signatures: string[]) {
   const transactions = [];
   for (let start = 0; start < signatures.length; start += TRANSACTION_FETCH_BATCH_SIZE) {
     const batch = signatures.slice(start, start + TRANSACTION_FETCH_BATCH_SIZE);
     const batchTransactions = await Promise.all(
-      batch.map((signature) => fetchParsedTransaction(signature)),
+      batch.map((signature) =>
+        retryOnRateLimit(
+          () => fetchParsedTransaction(signature),
+          `fetching transaction ${signature}`,
+        ),
+      ),
     );
     transactions.push(...batchTransactions);
+    if (start + TRANSACTION_FETCH_BATCH_SIZE < signatures.length) {
+      await new Promise((resolve) => setTimeout(resolve, BETWEEN_BATCH_DELAY_MS));
+    }
   }
   return transactions;
 }
@@ -51,9 +123,10 @@ export async function fetchWalletActivityDigest(
   limit: number,
 ): Promise<WalletActivityDigest> {
   const owner = address(walletAddress);
-  const signatures = await rpc
-    .getSignaturesForAddress(owner, { limit, commitment: "confirmed" })
-    .send();
+  const signatures = await retryOnRateLimit(
+    () => rpc.getSignaturesForAddress(owner, { limit, commitment: "confirmed" }).send(),
+    "fetching wallet signatures",
+  );
 
   if (signatures.length === 0) {
     return {

@@ -10,7 +10,9 @@
       "@solscope/config": ["./src/config.ts"],
       "@solscope/rpc": ["./src/rpc.ts"],
       "@solscope/schemas": ["./src/schemas.ts"],
-      "@solscope/tools": ["./src/tools/index.ts"]
+      "@solscope/tools": ["./src/tools/index.ts"],
+      "@solscope/helpers": ["./src/helpers/index.ts"],
+      "@solscope/types": ["./src/types/index.ts"]
     },
     "strict": true,
     "esModuleInterop": true,

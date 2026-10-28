@@ -1,50 +1,9 @@
 import type { ToolCallback } from "@modelcontextprotocol/server";
-import { address } from "@solana/kit";
-import {
-  createRpcCache,
-  formatTokenAmount,
-  getCachedValue,
-  rpc,
-  TOKEN_PROGRAM_ADDRESSES,
-} from "@solscope/rpc";
+import { createRpcCache, getCachedValue } from "@solscope/rpc";
+import { jsonTextContent, fetchWalletSnapshot } from "@solscope/helpers";
 import { walletSnapshotSchema } from "@solscope/schemas";
 
 const snapshotCache = createRpcCache();
-
-type WalletSnapshot = {
-  address: string;
-  solBalance: string;
-  tokenAccountCount: number;
-};
-
-async function fetchWalletSnapshot(walletAddress: string): Promise<WalletSnapshot> {
-  const owner = address(walletAddress);
-  const [balance, ...tokenAccountResponses] = await Promise.all([
-    rpc.getBalance(owner, { commitment: "confirmed" }).send(),
-    ...TOKEN_PROGRAM_ADDRESSES.map((programId) =>
-      rpc
-        .getTokenAccountsByOwner(
-          owner,
-          { programId },
-          {
-            commitment: "confirmed",
-            encoding: "base64",
-            dataSlice: { offset: 0, length: 0 },
-          },
-        )
-        .send(),
-    ),
-  ]);
-
-  return {
-    address: walletAddress,
-    solBalance: formatTokenAmount(balance.value, 9),
-    tokenAccountCount: tokenAccountResponses.reduce(
-      (count, response) => count + response.value.length,
-      0,
-    ),
-  };
-}
 
 export const getWalletSnapshot: ToolCallback<typeof walletSnapshotSchema> = async ({
   walletAddress,
@@ -53,7 +12,5 @@ export const getWalletSnapshot: ToolCallback<typeof walletSnapshotSchema> = asyn
     fetchWalletSnapshot(walletAddress),
   );
 
-  return {
-    content: [{ type: "text", text: JSON.stringify(snapshot, null, 2) }],
-  };
+  return jsonTextContent(snapshot);
 };

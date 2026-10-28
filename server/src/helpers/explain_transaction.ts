@@ -1,10 +1,25 @@
-import { formatTokenAmount } from "@solscope/rpc";
+import { assertIsSignature } from "@solana/kit";
+import { formatTokenAmount, rpc } from "@solscope/rpc";
 import type {
+  AnalyzedTransaction,
   SolBalanceChange,
   TokenBalance,
   TokenBalanceChange,
   TransactionCategory,
 } from "@solscope/types";
+
+export function fetchParsedTransaction(signature: string) {
+  assertIsSignature(signature);
+  return rpc
+    .getTransaction(signature, {
+      commitment: "confirmed",
+      encoding: "jsonParsed",
+      maxSupportedTransactionVersion: 1,
+    })
+    .send();
+}
+
+type ParsedTransaction = NonNullable<Awaited<ReturnType<typeof fetchParsedTransaction>>>;
 
 export function getTokenBalanceChanges(
   preTokenBalances: readonly TokenBalance[] | undefined,
@@ -118,5 +133,96 @@ export function classifyTransaction(
   return {
     category: "other",
     reason: "No recognized transfer, swap, or staking pattern was detected.",
+  };
+}
+
+export function analyzeTransaction(
+  signature: string,
+  transaction: ParsedTransaction,
+): AnalyzedTransaction {
+  const accountKeys = transaction.transaction.message.accountKeys.map((key) =>
+    typeof key === "string" ? key : key.pubkey,
+  );
+  const signers = transaction.transaction.message.accountKeys.flatMap((key) =>
+    typeof key === "string" || !key.signer ? [] : [key.pubkey],
+  );
+  const instructions = [
+    ...transaction.transaction.message.instructions,
+    ...(transaction.meta?.innerInstructions?.flatMap((group) => group.instructions) ?? []),
+  ];
+  const programNames = instructions.map((instruction) =>
+    "program" in instruction ? instruction.program : instruction.programId,
+  );
+  const instructionTypes = instructions.flatMap((instruction) =>
+    "parsed" in instruction && instruction.parsed ? [instruction.parsed.type] : [],
+  );
+  const tokenChanges = getTokenBalanceChanges(
+    transaction.meta?.preTokenBalances,
+    transaction.meta?.postTokenBalances,
+    accountKeys,
+  );
+  const solChanges = getSolBalanceChanges(
+    transaction.meta?.preBalances ?? [],
+    transaction.meta?.postBalances ?? [],
+    accountKeys,
+  );
+  const status: "failed" | "success" | "unknown" =
+    transaction.meta === null ? "unknown" : transaction.meta.err === null ? "success" : "failed";
+  const category = classifyTransaction(status, programNames, instructionTypes, tokenChanges);
+  const programs = [
+    ...new Map(
+      instructions.map((instruction) => [
+        instruction.programId,
+        {
+          id: instruction.programId,
+          name: "program" in instruction ? instruction.program : null,
+        },
+      ]),
+    ).values(),
+  ];
+  const feeLamports = transaction.meta ? BigInt(transaction.meta.fee) : null;
+  const feeSol = feeLamports === null ? null : formatTokenAmount(feeLamports, 9);
+  const feePayer = accountKeys[0] ?? null;
+  const changeSummary = [
+    ...solChanges.map(({ account, changeSol }) => `${account}: ${changeSol} SOL`),
+    ...tokenChanges.map(({ account, mint, change }) => `${account}: ${change} tokens of ${mint}`),
+  ];
+  const summary = [
+    status === "failed"
+      ? "Transaction failed."
+      : status === "success"
+        ? "Transaction succeeded."
+        : "Transaction execution status is unknown because the RPC omitted metadata.",
+    feeSol === null ? "Fee: unavailable." : `Fee: ${feeSol} SOL.`,
+    signers.length ? `Signed by ${signers.join(", ")}.` : "No signers were reported.",
+    programs.length
+      ? `Programs involved: ${programs
+          .map(({ name, id }) => (name ? `${name} (${id})` : id))
+          .join(", ")}.`
+      : "No program instructions were reported.",
+    changeSummary.length
+      ? `Balance changes: ${changeSummary.join("; ")}.`
+      : "No balance changes were reported.",
+    `Heuristic category: ${category.category} (${category.reason})`,
+  ].join(" ");
+
+  return {
+    signature,
+    time:
+      transaction.blockTime === null
+        ? null
+        : new Date(Number(transaction.blockTime) * 1_000).toISOString(),
+    status,
+    success: status === "success",
+    error: status === "failed" ? transaction.meta?.err : null,
+    category,
+    feePayer,
+    feeLamports,
+    feeSol,
+    signers,
+    programs,
+    solChanges,
+    tokenChanges,
+    summary,
   };
 }

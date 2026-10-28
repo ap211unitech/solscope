@@ -4,11 +4,13 @@ import {
   explainTransactionSchema,
   tokenRiskCheckSchema,
   walletPortfolioSchema,
+  walletActivityDigestSchema,
   walletSnapshotSchema,
 } from "@solscope/schemas";
 import {
   checkTokenRisk,
   explainTransaction,
+  getWalletActivityDigest,
   getWalletPortfolio,
   getWalletSnapshot,
 } from "@solscope/tools";
@@ -57,6 +59,16 @@ function createServer(): McpServer {
       inputSchema: tokenRiskCheckSchema,
     },
     checkTokenRisk,
+  );
+
+  server.registerTool(
+    "wallet_activity_digest",
+    {
+      description:
+        "Summarize recent wallet transactions by activity category, fees paid, frequently used programs, and probable counterparties. Transaction classifications and counterparties are heuristic.",
+      inputSchema: walletActivityDigestSchema,
+    },
+    getWalletActivityDigest,
   );
 
   return server;

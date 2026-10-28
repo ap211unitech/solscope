@@ -22,8 +22,13 @@ export const tokenRiskCheckSchema = z.object({
     .trim()
     .refine(isAddress, "Token mint address must be a valid Solana address"),
 });
+export const walletActivityDigestSchema = z.object({
+  walletAddress: walletAddressSchema.shape.walletAddress,
+  limit: z.number().int().min(1).max(50).default(20),
+});
 
 export type WalletSnapshotInput = z.infer<typeof walletSnapshotSchema>;
 export type WalletPortfolioInput = z.infer<typeof walletPortfolioSchema>;
 export type ExplainTransactionInput = z.infer<typeof explainTransactionSchema>;
 export type TokenRiskCheckInput = z.infer<typeof tokenRiskCheckSchema>;
+export type WalletActivityDigestInput = z.infer<typeof walletActivityDigestSchema>;

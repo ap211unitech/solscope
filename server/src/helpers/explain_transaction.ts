@@ -10,6 +10,7 @@ import type {
 
 export function fetchParsedTransaction(signature: string) {
   assertIsSignature(signature);
+
   return rpc
     .getTransaction(signature, {
       commitment: "confirmed",
@@ -93,6 +94,7 @@ export function classifyTransaction(
   if (status === "failed") {
     return { category: "failed", reason: "The transaction execution failed." };
   }
+
   if (status === "unknown") {
     return {
       category: "unknown",
@@ -105,6 +107,7 @@ export function classifyTransaction(
       .filter((name): name is string => typeof name === "string")
       .map((name) => name.toLowerCase()),
   );
+
   const instructions = new Set(
     instructionTypes
       .filter((type): type is string => typeof type === "string")
@@ -119,6 +122,7 @@ export function classifyTransaction(
   }
 
   const changedMints = new Set(tokenChanges.map(({ mint }) => mint));
+
   if (changedMints.size >= 2) {
     return {
       category: "swap",
@@ -151,36 +155,46 @@ export function analyzeTransaction(
   const accountKeys = transaction.transaction.message.accountKeys.map((key) =>
     typeof key === "string" ? key : key.pubkey,
   );
+
   const signers = transaction.transaction.message.accountKeys.flatMap((key) =>
     typeof key === "string" || !key.signer ? [] : [key.pubkey],
   );
+
   const instructions = [
     ...transaction.transaction.message.instructions,
     ...(transaction.meta?.innerInstructions?.flatMap((group) => group.instructions) ?? []),
   ];
+
   const programNames = instructions.flatMap((instruction) => {
     const name = "program" in instruction ? instruction.program : instruction.programId;
     return typeof name === "string" ? [name] : [];
   });
+
   const instructionTypes = instructions.flatMap((instruction) =>
     "parsed" in instruction && typeof instruction.parsed?.type === "string"
       ? [instruction.parsed.type]
       : [],
   );
+
   const tokenChanges = getTokenBalanceChanges(
     transaction.meta?.preTokenBalances,
     transaction.meta?.postTokenBalances,
     accountKeys,
   );
+
   const solChanges = getSolBalanceChanges(
     transaction.meta?.preBalances ?? [],
     transaction.meta?.postBalances ?? [],
     accountKeys,
   );
+
   const status: "failed" | "success" | "unknown" =
     transaction.meta === null ? "unknown" : transaction.meta.err === null ? "success" : "failed";
+
   const category = classifyTransaction(status, programNames, instructionTypes, tokenChanges);
+
   const programsById = new Map<string, { id: string; name: string | null }>();
+
   for (const instruction of instructions) {
     if (typeof instruction.programId !== "string") {
       continue;
@@ -191,6 +205,7 @@ export function analyzeTransaction(
       name: typeof name === "string" ? name : null,
     });
   }
+
   const programs = [...programsById.values()];
   const feeLamports = transaction.meta ? BigInt(transaction.meta.fee) : null;
   const feeSol = feeLamports === null ? null : formatTokenAmount(feeLamports, 9);

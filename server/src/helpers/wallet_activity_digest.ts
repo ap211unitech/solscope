@@ -1,5 +1,5 @@
 import { address } from "@solana/kit";
-import { formatTokenAmount, rpc } from "@solscope/rpc";
+import { formatTokenAmount, KNOWN_PROGRAMS, rpc } from "@solscope/rpc";
 import type { AnalyzedTransaction, WalletActivityDigest } from "@solscope/types";
 import { analyzeTransaction, fetchParsedTransaction } from "./explain_transaction";
 
@@ -9,27 +9,6 @@ const RECENT_TRANSACTION_COUNT = 10;
 const MAX_RATE_LIMIT_RETRIES = 4;
 const RATE_LIMIT_RETRY_BASE_MS = 500;
 const BETWEEN_BATCH_DELAY_MS = 250;
-
-const KNOWN_PROGRAMS: Record<string, string> = {
-  "11111111111111111111111111111111": "System Program",
-  TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA: "SPL Token",
-  TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb: "Token-2022",
-  ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL: "Associated Token Account",
-  ComputeBudget111111111111111111111111111111: "Compute Budget",
-  Stake11111111111111111111111111111111111111: "Stake Program",
-  MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr: "Memo",
-  AddressLookupTab1e1111111111111111111111111: "Address Lookup Table",
-};
-
-const BOILERPLATE_PROGRAMS = new Set([
-  "11111111111111111111111111111111",
-  "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
-  "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
-  "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL",
-  "ComputeBudget111111111111111111111111111111",
-  "MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr",
-  "AddressLookupTab1e1111111111111111111111111",
-]);
 
 function topEntries<TKey extends string>(counts: Map<TKey, number>, count: number) {
   return [...counts]
@@ -149,6 +128,7 @@ export async function fetchWalletActivityDigest(
 
   const transactions = await fetchTransactions(signatures.map(({ signature }) => signature));
   const analyses: AnalyzedTransaction[] = [];
+
   let transactionDataUnavailable = 0;
   transactions.forEach((transaction, index) => {
     if (transaction) {
@@ -168,7 +148,7 @@ export async function fetchWalletActivityDigest(
     const category = analysis.category.category;
     categories.set(category, (categories.get(category) ?? 0) + 1);
     for (const program of analysis.programs) {
-      if (!BOILERPLATE_PROGRAMS.has(program.id)) {
+      if (!new Set(Object.keys(KNOWN_PROGRAMS)).has(program.id)) {
         programs.set(program.id, (programs.get(program.id) ?? 0) + 1);
       }
     }
@@ -189,6 +169,7 @@ export async function fetchWalletActivityDigest(
         others.add(change.owner);
       }
     }
+
     others.delete(walletAddress);
     for (const account of others) {
       if (!Object.hasOwn(KNOWN_PROGRAMS, account)) {

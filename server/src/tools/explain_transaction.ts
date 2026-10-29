@@ -12,6 +12,7 @@ export const explainTransaction: ToolCallback<typeof explainTransactionSchema> =
   }
 
   const analysis = analyzeTransaction(signature, transaction);
+
   return jsonTextContent({
     signature: analysis.signature,
     status: analysis.status,

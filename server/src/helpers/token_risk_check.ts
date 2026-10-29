@@ -72,6 +72,7 @@ function readHolder(value: unknown): GoPlusHolder {
     typeof value.percent === "string" || typeof value.percent === "number"
       ? Number((Number(value.percent) * 100).toFixed(6))
       : null;
+
   if (percent !== null && (!Number.isFinite(percent) || percent < 0 || percent > 100)) {
     throw new Error("GoPlus returned an invalid holder percentage.");
   }
@@ -130,12 +131,14 @@ function readGoPlusTokenData(value: unknown, mintAddress: string): GoPlusTokenDa
   if (!isRecord(value) || typeof value.total_supply !== "string") {
     throw new Error(`GoPlus returned no token security data for ${mintAddress}.`);
   }
+
   if (value.holders !== undefined && value.holders !== null && !Array.isArray(value.holders)) {
     throw new Error(`GoPlus returned an invalid holder list for ${mintAddress}.`);
   }
-  const holders = Array.isArray(value.holders) ? value.holders.map(readHolder) : [];
 
+  const holders = Array.isArray(value.holders) ? value.holders.map(readHolder) : [];
   const metadata = isRecord(value.metadata) ? value.metadata : {};
+
   const checks = {
     mintable: readAuthorityCheck(value.mintable),
     freezable: readAuthorityCheck(value.freezable),
@@ -188,6 +191,7 @@ function readGoPlusTokenData(value: unknown, mintAddress: string): GoPlusTokenDa
 export async function fetchGoPlusTokenData(mintAddress: string): Promise<GoPlusTokenData> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
   try {
     const url = new URL(GOPLUS_API_URL);
     url.searchParams.set("contract_addresses", mintAddress);
@@ -283,9 +287,11 @@ export function sumPercent(
 ): number | null {
   const required = holderCount === null ? count : Math.min(count, holderCount);
   const selected = holders.slice(0, required);
+
   if (selected.length < required) {
     return null;
   }
+
   return selected.length > 0 && selected.every((holder) => holder.percent !== null)
     ? Number(selected.reduce((total, holder) => total + (holder.percent ?? 0), 0).toFixed(2))
     : null;
@@ -295,6 +301,7 @@ function hasProviderData(value: unknown): boolean {
   if (Array.isArray(value)) {
     return value.length > 0;
   }
+
   return isRecord(value)
     ? Object.keys(value).length > 0
     : typeof value === "string" && value.length > 0;
@@ -400,6 +407,7 @@ export function createRiskFlags(
 
   const top1 = sumPercent(holders, 1, holderCount);
   const top10 = sumPercent(holders, TOP_HOLDER_COUNT, holderCount);
+
   if (top1 !== null && top1 >= 50) {
     flags.push({
       severity: "high",
@@ -444,6 +452,7 @@ export function createRiskFlags(
       });
     }
   }
+
   for (const extension of extensions) {
     flags.push({
       severity: "info",

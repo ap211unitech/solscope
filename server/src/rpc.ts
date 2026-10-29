@@ -27,6 +27,17 @@ export const TOKEN_PROGRAM_ADDRESSES = [
   address("TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"),
 ];
 
+export const KNOWN_PROGRAMS: Record<string, string> = {
+  "11111111111111111111111111111111": "System Program",
+  TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA: "SPL Token",
+  TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb: "Token-2022",
+  ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL: "Associated Token Account",
+  ComputeBudget111111111111111111111111111111: "Compute Budget",
+  Stake11111111111111111111111111111111111111: "Stake Program",
+  MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr: "Memo",
+  AddressLookupTab1e1111111111111111111111111: "Address Lookup Table",
+};
+
 export const METADATA_PROGRAM_ADDRESS = address("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s");
 
 const CACHE_OPTIONS = {

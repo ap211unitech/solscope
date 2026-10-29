@@ -20,7 +20,7 @@
     "server:inspect": "pnpm build && pnpx -y @modelcontextprotocol/inspector node dist/index.js"
   },
   "keywords": [],
-  "author": "",
+  "author": "Arjun Porwal <porwalarjun95@gmail.com>",
   "license": "ISC",
   "packageManager": "pnpm@12.15.0",
   "dependencies": {

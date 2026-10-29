@@ -79,6 +79,7 @@ async function fetchTokenRiskReport(mintAddress: string): Promise<TokenRiskRepor
     top5Percent: sumPercent(holders, 5, goPlusData.holderCount),
     top10Percent: sumPercent(holders, TOP_HOLDER_COUNT, goPlusData.holderCount),
   };
+
   const authorityAgreement = {
     mint:
       goPlusData.checks.mintable.status === null
@@ -89,8 +90,10 @@ async function fetchTokenRiskReport(mintAddress: string): Promise<TokenRiskRepor
         ? null
         : (goPlusData.checks.freezable.status === "1") === (mintDetails.freezeAuthority !== null),
   };
+
   const authorityMismatch =
     authorityAgreement.mint === false || authorityAgreement.freeze === false;
+
   const flags = createRiskFlags(
     mintDetails.mintAuthority,
     mintDetails.freezeAuthority,
@@ -100,6 +103,7 @@ async function fetchTokenRiskReport(mintAddress: string): Promise<TokenRiskRepor
     mintDetails.extensions,
     goPlusData,
   );
+
   if (authorityMismatch) {
     flags.push({
       severity: "info",

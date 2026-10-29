@@ -79,7 +79,7 @@ async function fetchMetadata(mints: string[]) {
       })
       .send();
 
-    addressBatch.forEach((metadataAddress, index) => {
+    addressBatch.forEach((_, index) => {
       const account = response.value[index];
 
       if (!account || account.owner !== METADATA_PROGRAM_ADDRESS) {

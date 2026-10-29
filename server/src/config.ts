@@ -16,6 +16,7 @@ const envSchema = z.object({
     .refine((value) => ["http:", "https:"].includes(new URL(value).protocol), {
       message: "SOLANA_RPC_URL must use HTTP or HTTPS.",
     }),
+  PORT: z.number().default(3000),
 });
 
 const envResult = envSchema.safeParse(process.env);
@@ -31,4 +32,5 @@ export const APP_CONFIG = {
   solana: {
     rpcUrl: envResult.data.SOLANA_RPC_URL,
   },
+  port: envResult.data.PORT,
 } as const;

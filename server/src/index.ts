@@ -16,6 +16,7 @@ import {
 import express, { type Request, type Response } from "express";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { APP_CONFIG } from "./config";
+import { paidTokenRisk } from "./x402";
 
 function createServer(): McpServer {
   const server = new McpServer({
@@ -53,6 +54,9 @@ function createServer(): McpServer {
     explainTransaction,
   );
 
+  type RiskArgs = Parameters<typeof checkTokenRisk>[0];
+  type RiskCtx = Parameters<typeof checkTokenRisk>[1];
+
   server.registerTool(
     "token_risk_check",
     {
@@ -60,7 +64,19 @@ function createServer(): McpServer {
         "Return a heuristic token risk report with GoPlus holder rankings, security checks, metadata, markets, and liquidity-provider data, cross-checked against Solana RPC mint, supply, authorities, and Token-2022 extensions. Not investment advice.",
       inputSchema: tokenRiskCheckSchema,
     },
-    checkTokenRisk,
+    paidTokenRisk(async (args: RiskArgs) => {
+      console.error("[HANDLER] token_risk_check EXECUTED");
+
+      const result = await checkTokenRisk(args, {} as RiskCtx);
+
+      return {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-expect-error
+        content: result.content.flatMap((item) =>
+          item.type === "text" ? [{ type: "text" as const, text: item.text }] : [],
+        ),
+      };
+    }),
   );
 
   server.registerTool(

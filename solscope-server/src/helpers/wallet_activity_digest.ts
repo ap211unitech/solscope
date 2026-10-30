@@ -179,6 +179,7 @@ export async function fetchWalletActivityDigest(
   }
 
   const times = analyses.flatMap((analysis) => (analysis.time ? [analysis.time] : [])).sort();
+
   return {
     walletAddress,
     requested: limit,

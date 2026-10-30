@@ -4,6 +4,7 @@ import type { WalletSnapshot } from "@solscope/types";
 
 export async function fetchWalletSnapshot(walletAddress: string): Promise<WalletSnapshot> {
   const owner = address(walletAddress);
+
   const [balance, ...tokenAccountResponses] = await Promise.all([
     rpc.getBalance(owner, { commitment: "confirmed" }).send(),
     ...TOKEN_PROGRAM_ADDRESSES.map((programId) =>

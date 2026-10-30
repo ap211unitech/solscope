@@ -8,7 +8,7 @@ import type {
   TransactionCategory,
 } from "@solscope/types";
 
-export function fetchParsedTransaction(signature: string) {
+export const fetchParsedTransaction = (signature: string) => {
   assertIsSignature(signature);
 
   return rpc
@@ -18,15 +18,15 @@ export function fetchParsedTransaction(signature: string) {
       maxSupportedTransactionVersion: 1,
     })
     .send();
-}
+};
 
 type ParsedTransaction = NonNullable<Awaited<ReturnType<typeof fetchParsedTransaction>>>;
 
-export function getTokenBalanceChanges(
+export const getTokenBalanceChanges = (
   preTokenBalances: readonly TokenBalance[] | undefined,
   postTokenBalances: readonly TokenBalance[] | undefined,
   accountKeys: readonly string[],
-): TokenBalanceChange[] {
+): TokenBalanceChange[] => {
   const balances = new Map<
     string,
     { accountIndex: number; owner: string | null; mint: string; decimals: number; amount: bigint }
@@ -63,13 +63,13 @@ export function getTokenBalanceChanges(
       mint,
       change: formatTokenAmount(amount, decimals),
     }));
-}
+};
 
-export function getSolBalanceChanges(
+export const getSolBalanceChanges = (
   preBalances: readonly bigint[],
   postBalances: readonly bigint[],
   accountKeys: readonly string[],
-): SolBalanceChange[] {
+): SolBalanceChange[] => {
   return preBalances.flatMap((preBalance, index) => {
     const change = (postBalances[index] ?? preBalance) - preBalance;
     if (change === 0n) {
@@ -83,14 +83,14 @@ export function getSolBalanceChanges(
       },
     ];
   });
-}
+};
 
-export function classifyTransaction(
+export const classifyTransaction = (
   status: "failed" | "success" | "unknown",
   programNames: string[],
   instructionTypes: string[],
   tokenChanges: TokenBalanceChange[],
-): TransactionCategory {
+): TransactionCategory => {
   if (status === "failed") {
     return { category: "failed", reason: "The transaction execution failed." };
   }
@@ -146,12 +146,12 @@ export function classifyTransaction(
     category: "other",
     reason: "No recognized transfer, swap, or staking pattern was detected.",
   };
-}
+};
 
-export function analyzeTransaction(
+export const analyzeTransaction = (
   signature: string,
   transaction: ParsedTransaction,
-): AnalyzedTransaction {
+): AnalyzedTransaction => {
   const accountKeys = transaction.transaction.message.accountKeys.map((key) =>
     typeof key === "string" ? key : key.pubkey,
   );
@@ -214,6 +214,7 @@ export function analyzeTransaction(
     ...solChanges.map(({ account, changeSol }) => `${account}: ${changeSol} SOL`),
     ...tokenChanges.map(({ account, mint, change }) => `${account}: ${change} tokens of ${mint}`),
   ];
+
   const summary = [
     status === "failed"
       ? "Transaction failed."
@@ -252,4 +253,4 @@ export function analyzeTransaction(
     tokenChanges,
     summary,
   };
-}
+};

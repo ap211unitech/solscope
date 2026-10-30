@@ -1,3 +1,4 @@
+import { isAddress } from "@solana/kit";
 import dotenv from "dotenv";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -16,6 +17,11 @@ const envSchema = z.object({
     .refine((value) => ["http:", "https:"].includes(new URL(value).protocol), {
       message: "SOLANA_RPC_URL must use HTTP or HTTPS.",
     }),
+  PAY_TO_ADDRESS: z
+    .string("PAY_TO_ADDRESS is required")
+    .trim()
+    .refine(isAddress, "PAY_TO_ADDRESS must be a valid Solana address"),
+  PORT: z.number().default(3000),
 });
 
 const envResult = envSchema.safeParse(process.env);
@@ -30,5 +36,7 @@ if (!envResult.success) {
 export const APP_CONFIG = {
   solana: {
     rpcUrl: envResult.data.SOLANA_RPC_URL,
+    paytoAddress: envResult.data.PAY_TO_ADDRESS,
   },
+  port: envResult.data.PORT,
 } as const;

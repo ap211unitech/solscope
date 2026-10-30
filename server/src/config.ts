@@ -7,7 +7,7 @@ import { z } from "zod";
 const serverRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
 dotenv.config({
-  path: resolve(serverRoot, "../.env"),
+  path: resolve(serverRoot, "./.env"),
   quiet: true,
 });
 

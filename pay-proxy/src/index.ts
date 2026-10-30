@@ -9,8 +9,13 @@ import { createKeyPairSignerFromBytes } from "@solana/kit";
 
 const SOLANA_DEVNET = "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1";
 
+const CONFIG = {
+  PAYER_KEYPAIR: process.env.PAYER_KEYPAIR!,
+  SERVER_URL: process.env.SERVER_URL!,
+};
+
 const signer = await createKeyPairSignerFromBytes(
-  Uint8Array.from(JSON.parse(readFileSync(process.env.PAYER_KEYPAIR || "./payer.json", "utf8"))),
+  Uint8Array.from(JSON.parse(readFileSync(CONFIG.PAYER_KEYPAIR, "utf8"))),
 );
 
 const remote = createx402MCPClient({
@@ -19,7 +24,7 @@ const remote = createx402MCPClient({
   schemes: [{ network: SOLANA_DEVNET, client: new ExactSvmScheme(signer) }],
   autoPayment: true,
 });
-await remote.connect(new StreamableHTTPClientTransport(new URL(process.env.SERVER_URL!)));
+await remote.connect(new StreamableHTTPClientTransport(new URL(CONFIG.SERVER_URL)));
 
 const proxy = new Server(
   { name: "solscope-pay-proxy", version: "1.0.0" },

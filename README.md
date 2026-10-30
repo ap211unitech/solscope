@@ -2,6 +2,8 @@
 
 **Solana wallet and token intelligence for AI agents, sold per call in USDC.**
 
+[▶ Watch the demo](https://drive.google.com/file/d/1l-tnH2Pns7xOe2IDFespmSET7LgPtCAl/view?usp=sharing)
+
 SolScope is an [MCP](https://modelcontextprotocol.io) server that gives AI agents (Claude Desktop, Claude Code, any MCP client) tools to inspect Solana wallets, explain transactions, assess token risk and more. Most tools are paid: the agent pays a few cents in USDC per call using the [x402](https://docs.x402.org) payment protocol, with no accounts, API keys, or subscriptions.
 
 > **Note:** Payments run on Solana devnet and data comes from mainnet. Tool calls are paid in devnet USDC, which has no real value, so no real funds are involved. The wallet, token, and transaction data the tools return is read from Solana mainnet, so you can query real addresses and tokens.

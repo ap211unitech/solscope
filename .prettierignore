@@ -1,5 +1,5 @@
 .git
 .env
-server/node_modules
-server/dist
-server/pnpm-lock.yaml
+solscope-server/node_modules
+solscope-server/dist
+solscope-server/pnpm-lock.yaml

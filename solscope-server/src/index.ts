@@ -6,6 +6,10 @@ import { createMcpServer } from "./mcp";
 const app = express();
 app.use(express.json());
 
+app.get("/health", (_req: Request, res: Response) => {
+  res.status(200).send("All good here!");
+});
+
 app.post("/mcp", async (req: Request, res: Response) => {
   const server = createMcpServer();
   const transport = new StreamableHTTPServerTransport({

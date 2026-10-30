@@ -21,7 +21,7 @@ const envSchema = z.object({
     .string("PAY_TO_ADDRESS is required")
     .trim()
     .refine(isAddress, "PAY_TO_ADDRESS must be a valid Solana address"),
-  PORT: z.number().default(3000),
+  PORT: z.coerce.number().default(3000),
 });
 
 const envResult = envSchema.safeParse(process.env);

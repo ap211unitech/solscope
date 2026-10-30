@@ -16,13 +16,13 @@ SolScope is an [MCP](https://modelcontextprotocol.io) server that gives AI agent
 - [How it works](#how-it-works)
 - [Tools and pricing](#tools-and-pricing)
 - [Repository layout](#repository-layout)
+- [Try the hosted server](#try-the-hosted-server)
 - [Quick start](#quick-start)
 - [Connect Claude Desktop](#connect-claude-desktop)
 - [Testing with the MCP Inspector](#testing-with-the-mcp-inspector)
 - [Adding a paid tool](#adding-a-paid-tool)
-- [Security notes](#security-notes)
 - [Troubleshooting](#troubleshooting)
-- [Roadmap](#roadmap)
+- [Network reference](#network-reference-devnet)
 
 ---
 
@@ -129,6 +129,68 @@ SolScope/
 │   └── package.json
 └── LICENSE
 ```
+
+---
+
+## Try the hosted server
+
+Want to try SolScope without running the server yourself? A hosted instance is live at:
+
+```
+https://solscope-3wwp.onrender.com/mcp
+```
+
+You only need the **pay proxy** locally, because it holds your wallet and signs the payments.
+
+1. **Build the proxy**
+
+   ```bash
+   git clone https://github.com/ap211unitech/solscope
+   cd SolScope/solscope-pay-proxy
+   pnpm install
+   pnpm build
+   ```
+
+2. **Create a payer wallet and fund it with devnet USDC**
+
+   ```bash
+   solana-keygen new --outfile payer.json
+   solana address -k payer.json
+   ```
+
+   Get devnet USDC for that address at <https://faucet.circle.com>.
+
+3. **Add it to your MCP client.** For Claude Desktop, open **Settings, Developer, Edit Config** and add the following, using **absolute paths**:
+
+   ```json
+   {
+     "mcpServers": {
+       "solscope": {
+         "command": "node",
+         "args": ["/absolute/path/to/SolScope/solscope-pay-proxy/dist/index.js"],
+         "env": {
+           "PAYER_KEYPAIR": "/absolute/path/to/SolScope/solscope-pay-proxy/payer.json",
+           "SERVER_URL": "https://solscope-3wwp.onrender.com/mcp"
+         }
+       }
+     }
+   }
+   ```
+
+4. Fully quit and reopen Claude Desktop, start a **new chat**, and ask for a token risk check on any mint address. Approve the tool call, and the proxy pays $0.02 in devnet USDC and returns the report.
+
+For Claude Code:
+
+```bash
+claude mcp add solscope \
+  -e PAYER_KEYPAIR=/absolute/path/to/payer.json \
+  -e SERVER_URL=https://solscope-3wwp.onrender.com/mcp \
+  -- node /absolute/path/to/SolScope/solscope-pay-proxy/dist/index.js
+```
+
+> **Note:** The hosted server may be on a free tier that sleeps when idle, so the first request after a quiet period can take a while. Retry if it times out. The free tool `get_wallet_snapshot` works without any payment or wallet funding, which makes it a quick way to check the connection.
+
+To run everything yourself instead, see [Quick start](#quick-start).
 
 ---
 

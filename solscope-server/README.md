@@ -1,36 +1,84 @@
-# SolScope MCP server
+# solscope-server
 
-This is a TypeScript MCP server using the official MCP TypeScript SDK and stdio transport.
+MCP server for Solana wallet and token intelligence. It speaks Streamable HTTP and charges for most tools in devnet USDC using [x402](https://docs.x402.org).
 
-## Get started
+## Run
 
 ```sh
-cp -n ../.env.example ../.env
+cp -n .env.example .env   # then fill in the values
 pnpm install
 pnpm dev
 ```
 
-Set `SOLANA_RPC_URL` in the project root `.env` file to a Solana HTTP(S) RPC endpoint. The example uses Solana mainnet-beta's public RPC URL; a provider endpoint can be used instead.
+The server listens on `http://localhost:<port>/mcp`. It is stateless: each `POST /mcp` request gets a fresh server and transport. `GET` and `DELETE` return 405.
 
-The server exposes `get_wallet_snapshot`, `get_wallet_portfolio`, `explain_transaction`, `token_risk_check`, and `wallet_activity_digest` read-only tools. The wallet snapshot validates the supplied Solana address and returns its SOL balance and combined SPL Token/Token-2022 account count. The portfolio aggregates non-zero token holdings by mint and returns their amounts and on-chain Metaplex names/symbols when available, falling back to the mint address when metadata is missing. Wallet tools cache results in memory for 15 seconds. `explain_transaction` retrieves a confirmed transaction (up to version 1), reports status, fee, signers, involved programs, and observed SOL/token balance changes. `wallet_activity_digest` analyzes up to 50 recent confirmed transactions (20 by default), reports counts by heuristic category, failed transactions, SOL fees paid by the wallet as fee payer, top non-boilerplate programs, frequent counterparties inferred from balance changes, and a short recent-activity list. It fetches transactions in small batches to limit RPC concurrency. Transactions unavailable from the configured RPC are counted and excluded from analysis; fee totals include only transactions with available metadata, and the report counts fee data that could not be retrieved. Activity categories and counterparties are heuristic and may include pools, vaults, exchanges, or other transaction accounts; token changes are attributed to token-account owners when the RPC supplies them.
+## Configuration
 
-`token_risk_check` uses GoPlus's Solana Token Security API (Beta) for ranked holders and percentages, holder count, authority/security checks, metadata, DEX markets, liquidity-provider records, and creators. Risk flags include provider-reported controls such as mutable metadata, closable tokens, mutable balances, transfer fees/hooks, and Token-2022-specific behavior. It does not rescan token accounts. Solana RPC independently verifies mint validity, token program, supply, decimals, authorities, and parsed Token-2022 extensions. The report compares GoPlus and RPC supply and authority status; discrepancies are surfaced, and supply differences greater than 1%, incomplete holder rankings, or authority mismatches can make the overall risk level inconclusive. Holder concentration uses GoPlus's returned percentages and is not represented as a complete holder-set scan. GoPlus calls time out after 10 seconds, and results are cached for 15 seconds. Token account owners may not be unique beneficial owners. Parsed extensions are null if the RPC does not return them. This is not investment advice. Paid access and x402 are not implemented.
+Set these in `.env` (see `.env.example` for the full list):
 
-To build the server and launch it in the MCP Inspector:
+| Variable         | Purpose                                                                              |
+| ---------------- | ------------------------------------------------------------------------------------ |
+| `SOLANA_RPC_URL` | Solana HTTP(S) RPC endpoint. A provider endpoint is recommended over the public one. |
+| Pay-to address   | Public Solana address that receives USDC payments. Never put a private key here.     |
+
+## Tools
+
+| Tool                     | Description                                                                                                            | Price  |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------- | ------ |
+| `get_wallet_snapshot`    | SOL balance and SPL Token / Token-2022 account count                                                                   | Free   |
+| `get_wallet_portfolio`   | Non-zero token holdings by mint, with Metaplex names and symbols when available                                        | $0.005 |
+| `explain_transaction`    | Status, fee, signers, programs, and SOL/token balance changes of a confirmed transaction                               | $0.01  |
+| `token_risk_check`       | Heuristic risk report from GoPlus data, cross-checked against RPC mint, supply, authorities, and Token-2022 extensions | $0.02  |
+| `wallet_activity_digest` | Summary of up to 50 recent transactions (20 by default): categories, fees, top programs, frequent counterparties       | $0.02  |
+
+Categories, counterparties, and risk levels are heuristic. Nothing here is investment advice.
+
+Behavior worth knowing:
+
+- Wallet tools and `token_risk_check` cache results in memory for 15 seconds.
+- GoPlus calls time out after 10 seconds. If GoPlus and RPC disagree (supply off by more than 1%, authority mismatch, or incomplete holder rankings), the risk level can be reported as inconclusive.
+- `wallet_activity_digest` fetches transactions in small batches. Transactions the RPC can't return are counted and excluded.
+
+## Payments
+
+Prices live in one table, `TOOL_PRICES` in `src/x402.ts`. Paid tools are registered with `registerPaidTool`, which adds the paywall, appends the price to the tool description, and adapts the MCP SDK context for the x402 wrapper:
+
+```ts
+registerPaidTool(
+  server,
+  "token_risk_check",
+  { description: "...", inputSchema: tokenRiskCheckSchema },
+  checkTokenRisk,
+);
+```
+
+To add a paid tool: add its price to `TOOL_PRICES`, then register it as above.
+
+|             |                                                             |
+| ----------- | ----------------------------------------------------------- |
+| Network     | `solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1` (devnet)          |
+| Asset       | devnet USDC, `4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU` |
+| Facilitator | `https://x402.org/facilitator` (sponsors the network fee)   |
+
+Agents can't pay on their own. Use [`solscope-pay-proxy`](../solscope-pay-proxy) between the agent and this server.
+
+## Test
+
+Start the server, then open the MCP Inspector and connect with **Streamable HTTP** to `http://localhost:<port>/mcp`:
 
 ```sh
-pnpm inspect
+npx @modelcontextprotocol/inspector
 ```
+
+Paid tools return a payment-required result here, since the Inspector can't pay. To test a real payment, run the Inspector through the proxy.
 
 ## Commands
 
-- `pnpm dev` — run the TypeScript server directly during development
-- `pnpm typecheck` — type-check without emitting files
-- `pnpm build` — compile the server to `dist/`
-- `pnpm start` — run the compiled server
-- `pnpm lint` — lint all TypeScript files in the repository
-- `pnpm lint:fix` — automatically fix lint issues where possible
-- `pnpm format` — format supported source, config, and documentation files across the repository
-- `pnpm format:check` — check formatting across the repository without changing files
+- `pnpm dev`: run the server directly during development
+- `pnpm typecheck`: type-check without emitting files
+- `pnpm build`: compile to `dist/`
+- `pnpm start`: run the compiled server
+- `pnpm lint` / `pnpm lint:fix`: lint, and auto-fix where possible
+- `pnpm format` / `pnpm format:check`: format, or check formatting
 
-When connecting an MCP client over stdio, configure it to launch `node` with the absolute path to `server/dist/index.js` after building. Keep standard output reserved for MCP messages; write logs to standard error.
+Write logs to standard error, never standard output.

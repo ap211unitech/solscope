@@ -19,9 +19,15 @@
     "format": "prettier --write \"../**/*.{ts,tsx,js,jsx,json,md,yaml,yml}\" --ignore-path ../.prettierignore",
     "format:check": "prettier --check \"../**/*.{ts,tsx,js,jsx,json,md,yaml,yml}\" --ignore-path ../.prettierignore"
   },
-  "keywords": [],
+  "keywords": [
+    "solana",
+    "agentic-payments",
+    "x402",
+    "usdc-micropayments",
+    "mcp"
+  ],
   "author": "Arjun Porwal <porwalarjun95@gmail.com>",
-  "license": "ISC",
+  "license": "MIT",
   "packageManager": "pnpm@12.15.0",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.2",

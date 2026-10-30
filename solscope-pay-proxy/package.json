@@ -7,9 +7,16 @@
     "build": "tsc",
     "clean": "rm -rf dist"
   },
-  "keywords": [],
+  "keywords": [
+    "solana",
+    "agentic-payments",
+    "x402",
+    "usdc-micropayments",
+    "mcp",
+    "pay-proxy"
+  ],
   "author": "Arjun Porwal <porwalarjun95@gmail.com>",
-  "license": "ISC",
+  "license": "MIT",
   "devEngines": {
     "packageManager": {
       "name": "pnpm",

@@ -57,6 +57,16 @@ function createServer(): McpServer {
   type RiskArgs = Parameters<typeof checkTokenRisk>[0];
   type RiskCtx = Parameters<typeof checkTokenRisk>[1];
 
+  const wrappedRisk = paidTokenRisk(async (args: RiskArgs) => {
+    const result = await checkTokenRisk(args, {} as RiskCtx);
+    return {
+      // @ts-expect-error narrowing to text content
+      content: result.content.flatMap((item) =>
+        item.type === "text" ? [{ type: "text" as const, text: item.text }] : [],
+      ),
+    };
+  });
+
   server.registerTool(
     "token_risk_check",
     {
@@ -64,19 +74,13 @@ function createServer(): McpServer {
         "Return a heuristic token risk report with GoPlus holder rankings, security checks, metadata, markets, and liquidity-provider data, cross-checked against Solana RPC mint, supply, authorities, and Token-2022 extensions. Not investment advice.",
       inputSchema: tokenRiskCheckSchema,
     },
-    paidTokenRisk(async (args: RiskArgs) => {
-      console.error("[HANDLER] token_risk_check EXECUTED");
-
-      const result = await checkTokenRisk(args, {} as RiskCtx);
-
-      return {
+    (args: RiskArgs, ctx) =>
+      wrappedRisk(args, {
+        toolName: "token_risk_check",
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-expect-error
-        content: result.content.flatMap((item) =>
-          item.type === "text" ? [{ type: "text" as const, text: item.text }] : [],
-        ),
-      };
-    }),
+        _meta: ctx.mcpReq?._meta ?? ctx._meta,
+      }),
   );
 
   server.registerTool(

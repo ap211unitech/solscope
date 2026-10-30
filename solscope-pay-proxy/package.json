@@ -1,10 +1,11 @@
 {
-  "name": "pay-proxy",
+  "name": "solscope-pay-proxy",
   "version": "1.0.0",
   "description": "Payment proxy enabling AI agents to autonomously execute on-chain transactions.",
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "clean": "rm -rf dist"
   },
   "keywords": [],
   "author": "Arjun Porwal <porwalarjun95@gmail.com>",

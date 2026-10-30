@@ -1,7 +1,7 @@
 {
-  "name": "SolScope MCP Server",
+  "name": "solscope-server",
   "version": "1.0.0",
-  "description": "SolScope Model Context Protocol server",
+  "description": "SolScope MCP server providing payment-gated access to tools through on-chain x402 transactions.",
   "main": "dist/index.js",
   "type": "module",
   "private": true,
@@ -9,6 +9,7 @@
     "node": ">=20.19"
   },
   "scripts": {
+    "clean": "rm -rf dist",
     "dev": "tsx src/index.ts",
     "typecheck": "tsc --noEmit",
     "build": "tsc && tsc-alias --resolve-full-paths",
@@ -16,8 +17,7 @@
     "lint": "eslint .. --config eslint.config.js --ext .ts",
     "lint:fix": "eslint .. --config eslint.config.js --ext .ts --fix",
     "format": "prettier --write \"../**/*.{ts,tsx,js,jsx,json,md,yaml,yml}\" --ignore-path ../.prettierignore",
-    "format:check": "prettier --check \"../**/*.{ts,tsx,js,jsx,json,md,yaml,yml}\" --ignore-path ../.prettierignore",
-    "server:inspect": "pnpm build && pnpx -y @modelcontextprotocol/inspector node dist/index.js"
+    "format:check": "prettier --check \"../**/*.{ts,tsx,js,jsx,json,md,yaml,yml}\" --ignore-path ../.prettierignore"
   },
   "keywords": [],
   "author": "Arjun Porwal <porwalarjun95@gmail.com>",

@@ -16,7 +16,7 @@ import {
 import express, { type Request, type Response } from "express";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { APP_CONFIG } from "./config";
-import { paidTokenRisk } from "./x402";
+import { registerPaidTool } from "./x402";
 
 function createServer(): McpServer {
   const server = new McpServer({
@@ -34,7 +34,8 @@ function createServer(): McpServer {
     getWalletSnapshot,
   );
 
-  server.registerTool(
+  registerPaidTool(
+    server,
     "get_wallet_portfolio",
     {
       description:
@@ -44,7 +45,8 @@ function createServer(): McpServer {
     getWalletPortfolio,
   );
 
-  server.registerTool(
+  registerPaidTool(
+    server,
     "explain_transaction",
     {
       description:
@@ -54,36 +56,19 @@ function createServer(): McpServer {
     explainTransaction,
   );
 
-  type RiskArgs = Parameters<typeof checkTokenRisk>[0];
-  type RiskCtx = Parameters<typeof checkTokenRisk>[1];
-
-  const wrappedRisk = paidTokenRisk(async (args: RiskArgs) => {
-    const result = await checkTokenRisk(args, {} as RiskCtx);
-    return {
-      // @ts-expect-error narrowing to text content
-      content: result.content.flatMap((item) =>
-        item.type === "text" ? [{ type: "text" as const, text: item.text }] : [],
-      ),
-    };
-  });
-
-  server.registerTool(
+  registerPaidTool(
+    server,
     "token_risk_check",
     {
       description:
         "Return a heuristic token risk report with GoPlus holder rankings, security checks, metadata, markets, and liquidity-provider data, cross-checked against Solana RPC mint, supply, authorities, and Token-2022 extensions. Not investment advice.",
       inputSchema: tokenRiskCheckSchema,
     },
-    (args: RiskArgs, ctx) =>
-      wrappedRisk(args, {
-        toolName: "token_risk_check",
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-expect-error
-        _meta: ctx.mcpReq?._meta ?? ctx._meta,
-      }),
+    checkTokenRisk,
   );
 
-  server.registerTool(
+  registerPaidTool(
+    server,
     "wallet_activity_digest",
     {
       description:

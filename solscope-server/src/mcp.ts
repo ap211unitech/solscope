@@ -27,6 +27,7 @@ export const createMcpServer = (): McpServer => {
       description:
         "Return the wallet's SOL balance and the number of SPL Token and Token-2022 accounts.",
       inputSchema: walletSnapshotSchema,
+      annotations: { readOnlyHint: true },
     },
     getWalletSnapshot,
   );

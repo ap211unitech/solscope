@@ -78,6 +78,7 @@ export function registerPaidTool<S extends z.ZodType>(
     {
       description: `${config.description} Costs ${TOOL_PRICES[name]} USDC per call.`,
       inputSchema: config.inputSchema,
+      annotations: { readOnlyHint: true },
     },
     ((args: z.output<S>, ctx: SdkCtx) =>
       wrapped(

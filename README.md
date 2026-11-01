@@ -125,7 +125,6 @@ SolScope/
 │   └── package.json
 ├── solscope-pay-proxy/     # Local payment proxy (runs on the user's machine)
 │   ├── src/index.ts        # Transparent MCP passthrough with x402 auto-payment
-│   ├── payer.json          # Devnet keypair. NEVER commit this.
 │   └── package.json
 └── LICENSE
 ```

@@ -13,7 +13,10 @@ The proxy is a transparent passthrough: it lists whatever tools the server has a
 ```sh
 pnpm install
 pnpm build
+pnpm test
 ```
+
+`pnpm test` builds the proxy and runs the Vitest suite for its MCP tool listing and call-relay behavior over an in-memory transport. It does not make payments or require a running server.
 
 Create a payer wallet and fund it with **devnet USDC** from <https://faucet.circle.com> (Solana, Devnet). It needs no SOL, because the facilitator pays the network fee.
 

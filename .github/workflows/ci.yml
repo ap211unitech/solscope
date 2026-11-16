@@ -1,0 +1,59 @@
+name: solscope
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: ${{ matrix.package }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - package: solscope-server
+            directory: solscope-server
+            pnpm-version: 12.15.0
+          - package: solscope-pay-proxy
+            directory: solscope-pay-proxy
+            pnpm-version: 12.16.1
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ matrix.pnpm-version }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: ${{ matrix.directory }}/pnpm-lock.yaml
+
+      - name: Install dependencies
+        working-directory: ${{ matrix.directory }}
+        run: pnpm install --frozen-lockfile
+
+      - name: Run tests
+        working-directory: ${{ matrix.directory }}
+        run: pnpm test
+
+      - name: Type-check and lint server
+        if: matrix.package == 'solscope-server'
+        working-directory: solscope-server
+        run: |
+          pnpm typecheck
+          pnpm typecheck:test
+          pnpm lint
+
+      - name: Build
+        working-directory: ${{ matrix.directory }}
+        run: pnpm build

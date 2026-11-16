@@ -75,7 +75,9 @@ Paid tools return a payment-required result here, since the Inspector can't pay.
 ## Commands
 
 - `pnpm dev`: run the server directly during development
+- `pnpm test`: run the offline Vitest suite (no Solana RPC or facilitator required)
 - `pnpm typecheck`: type-check without emitting files
+- `pnpm typecheck:test`: type-check the source and tests without emitting files
 - `pnpm build`: compile to `dist/`
 - `pnpm start`: run the compiled server
 - `pnpm lint` / `pnpm lint:fix`: lint, and auto-fix where possible
